@@ -3,6 +3,8 @@ pragma solidity ^0.8.13;
 
 contract TimelockEscrow {
     address public seller;
+    mapping(address => uint256) public deposits;
+    mapping(address => uint256) public timestamps;
 
     /**
      * The goal of this exercise is to create a Time lock escrow.
@@ -21,6 +23,8 @@ contract TimelockEscrow {
      */
     function createBuyOrder() external payable {
         // your code here
+        deposits[msg.sender] = msg.value;
+        timestamps[msg.sender] = block.timestamp;
     }
 
     /**
@@ -28,17 +32,45 @@ contract TimelockEscrow {
      */
     function sellerWithdraw(address buyer) external {
         // your code here
+        require(
+            msg.sender == seller,
+            "TimelockEscrow: Only seller can withdraw."
+        );
+        require(
+            block.timestamp >= timestamps[buyer] + 3 days,
+            "TimelockEscrow: Seller cannot withdraw yet."
+        );
+        uint256 amount = deposits[buyer];
+        require(amount > 0, "TimelockEscrow: No deposit found.");
+        require(
+            address(this).balance >= amount,
+            "TimelockEscrow: Insufficient balance."
+        );
+        (bool success, ) = payable(seller).call{value: amount}("");
+        require(success, "TimelockEscrow: Transfer not successful.");
     }
 
     /**
      * allowa buyer to withdraw at anytime before the end of the escrow (3 days)
      */
     function buyerWithdraw() external {
-        // your code here
+        require(
+            block.timestamp < timestamps[msg.sender] + 3 days,
+            "TimelockEscrow: Escrow has ended."
+        );
+        uint256 amount = deposits[msg.sender];
+        require(amount > 0, "TimelockEscrow: No deposit found.");
+        require(
+            address(this).balance >= amount,
+            "TimelockEscrow: Insufficient balance."
+        );
+        (bool success, ) = payable(msg.sender).call{value: amount}("");
+        require(success, "TimelockEscrow: Transfer not successful.");
     }
 
     // returns the escrowed amount of @param buyer
     function buyerDeposit(address buyer) external view returns (uint256) {
         // your code here
+        return deposits[buyer];
     }
 }

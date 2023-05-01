@@ -18,6 +18,10 @@ contract ReducingPayout {
     }
 
     function withdraw() public {
-        // your code here
+        uint256 timeRemaining = depositedTime + 24 hours - block.timestamp;
+        require(timeRemaining >= 0, "ReducingPayout: Withdrawal period ended");
+        uint256 amount = (address(this).balance * timeRemaining) / 24 hours;
+        (bool success, ) = payable(msg.sender).call{value: amount}("");
+        require(success, "ReducingPayout: Transfer failed");
     }
 }

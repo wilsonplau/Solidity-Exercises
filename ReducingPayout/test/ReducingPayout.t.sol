@@ -63,9 +63,10 @@ contract ReducingPayoutTest is Test {
 
         vm.warp(21600);
         // At 6 hours
+        uint256 ethPerSecond = uint256(1 ether) / 24 hours;
         uint256 amountExpected = block.timestamp >= 86400
             ? 0
-            : 1 ether - ((block.timestamp * 0.0011574 ether) / 100);
+            : 1 ether - block.timestamp * ethPerSecond;
 
         reducingPayout.withdraw();
 
